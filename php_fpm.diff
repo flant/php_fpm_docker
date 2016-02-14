@@ -1,0 +1,399 @@
+diff -Naur a/config.m4 b/config.m4
+--- a/config.m4	2016-02-13 23:38:30.000000000 +0000
++++ b/config.m4	2016-02-12 22:54:47.000000000 +0000
+@@ -647,6 +647,7 @@
+     fpm/fpm_stdio.c \
+     fpm/fpm_unix.c \
+     fpm/fpm_worker_pool.c \
++    fpm/fpm_docker.c \
+     fpm/zlog.c \
+ 		fpm/events/select.c \
+ 		fpm/events/poll.c \
+diff -Naur a/fpm/fpm_children.c b/fpm/fpm_children.c
+--- a/fpm/fpm_children.c	2014-02-05 10:00:36.000000000 +0000
++++ b/fpm/fpm_children.c	2016-02-13 23:40:24.809069081 +0000
+@@ -28,6 +28,7 @@
+ #include "fpm_scoreboard.h"
+ #include "fpm_status.h"
+ #include "fpm_log.h"
++#include "fpm_docker.h"
+ 
+ #include "zlog.h"
+ 
+@@ -402,6 +403,7 @@
+ 		switch (pid) {
+ 
+ 			case 0 :
++				fpm_docker_enter(wp);
+ 				fpm_child_resources_use(child);
+ 				fpm_globals.is_child = 1;
+ 				fpm_child_init(wp);
+diff -Naur a/fpm/fpm_conf.c b/fpm/fpm_conf.c
+--- a/fpm/fpm_conf.c	2016-02-13 23:38:30.000000000 +0000
++++ b/fpm/fpm_conf.c	2016-02-13 23:41:16.857143810 +0000
+@@ -103,6 +103,7 @@
+ 	{ "emergency_restart_interval",  &fpm_conf_set_time,            GO(emergency_restart_interval) },
+ 	{ "process_control_timeout",     &fpm_conf_set_time,            GO(process_control_timeout) },
+ 	{ "process.max",                 &fpm_conf_set_integer,         GO(process_max) },
++	{ "docker_socket",               &fpm_conf_set_string,          GO(docker_socket) },
+ 	{ "process.priority",            &fpm_conf_set_integer,         GO(process_priority) },
+ 	{ "daemonize",                   &fpm_conf_set_boolean,         GO(daemonize) },
+ 	{ "rlimit_files",                &fpm_conf_set_integer,         GO(rlimit_files) },
+@@ -121,6 +122,7 @@
+ 	{ "prefix",                    &fpm_conf_set_string,      WPO(prefix) },
+ 	{ "user",                      &fpm_conf_set_string,      WPO(user) },
+ 	{ "group",                     &fpm_conf_set_string,      WPO(group) },
++	{ "docker",                    &fpm_conf_set_string,      WPO(docker) },
+ 	{ "listen",                    &fpm_conf_set_string,      WPO(listen_address) },
+ 	{ "listen.backlog",            &fpm_conf_set_integer,     WPO(listen_backlog) },
+ 	{ "listen.owner",              &fpm_conf_set_string,      WPO(listen_owner) },
+@@ -630,6 +632,7 @@
+ 	free(wpc->prefix);
+ 	free(wpc->user);
+ 	free(wpc->group);
++	free(wpc->docker);
+ 	free(wpc->listen_address);
+ 	free(wpc->listen_owner);
+ 	free(wpc->listen_group);
+@@ -755,6 +758,12 @@
+ 			return -1;
+ 		}
+ 
++		/* alert if docker is set but docker_socket not*/
++		if (wp->config->docker && !fpm_global_config.docker_socket) {
++			zlog(ZLOG_ALERT, "[pool %s] docker_socket should be setuped when using docker", wp->config->name);
++			return -1;
++		}
++
+ 		/* listen */
+ 		if (wp->config->listen_address && *wp->config->listen_address) {
+ 			wp->listen_address_domain = fpm_sockets_domain_from_address(wp->config->listen_address);
+@@ -1548,6 +1557,7 @@
+ 	zlog(ZLOG_NOTICE, "\temergency_restart_threshold = %d", fpm_global_config.emergency_restart_threshold);
+ 	zlog(ZLOG_NOTICE, "\tprocess_control_timeout = %ds",    fpm_global_config.process_control_timeout);
+ 	zlog(ZLOG_NOTICE, "\tprocess.max = %d",                 fpm_global_config.process_max);
++	zlog(ZLOG_NOTICE, "\tdocker_socket = %s",               STR2STR(fpm_global_config.docker_socket));
+ 	if (fpm_global_config.process_priority == 64) {
+ 		zlog(ZLOG_NOTICE, "\tprocess.priority = undefined");
+ 	} else {
+@@ -1569,6 +1579,7 @@
+ 		zlog(ZLOG_NOTICE, "\tprefix = %s",                     STR2STR(wp->config->prefix));
+ 		zlog(ZLOG_NOTICE, "\tuser = %s",                       STR2STR(wp->config->user));
+ 		zlog(ZLOG_NOTICE, "\tgroup = %s",                      STR2STR(wp->config->group));
++		zlog(ZLOG_NOTICE, "\tdocker = %s",                     STR2STR(wp->config->docker));
+ 		zlog(ZLOG_NOTICE, "\tlisten = %s",                     STR2STR(wp->config->listen_address));
+ 		zlog(ZLOG_NOTICE, "\tlisten.backlog = %d",             wp->config->listen_backlog);
+ 		zlog(ZLOG_NOTICE, "\tlisten.owner = %s",               STR2STR(wp->config->listen_owner));
+diff -Naur a/fpm/fpm_conf.h b/fpm/fpm_conf.h
+--- a/fpm/fpm_conf.h	2014-02-05 10:00:36.000000000 +0000
++++ b/fpm/fpm_conf.h	2016-02-13 23:28:37.072052943 +0000
+@@ -35,6 +35,7 @@
+ 	int emergency_restart_interval;
+ 	int process_control_timeout;
+ 	int process_max;
++	char* docker_socket;
+ 	int process_priority;
+ 	int daemonize;
+ 	int rlimit_files;
+@@ -56,6 +57,7 @@
+ 	char *prefix;
+ 	char *user;
+ 	char *group;
++	char *docker;
+ 	char *listen_address;
+ 	int listen_backlog;
+ 	char *listen_owner;
+diff -Naur a/fpm/fpm_docker.c b/fpm/fpm_docker.c
+--- a/fpm/fpm_docker.c	1970-01-01 00:00:00.000000000 +0000
++++ b/fpm/fpm_docker.c	2016-02-13 23:33:18.608457161 +0000
+@@ -0,0 +1,277 @@
++
++	/* (c) 2016 Dmitry Stolyarov */
++
++#include "fpm_config.h"
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <sys/wait.h>
++#include <sys/socket.h>
++#include <sys/un.h>
++#include <fcntl.h>
++#include <signal.h>
++#include <sched.h>
++
++#ifdef HAVE_PRCTL
++#include <sys/prctl.h>
++#endif
++
++#include "fpm.h"
++#include "fpm_conf.h"
++#include "fpm_cleanup.h"
++#include "fpm_worker_pool.h"
++#include "fpm_env.h"
++#include "zlog.h"
++
++static pid_t fpm_docker_child_pid = 0;
++
++void fpm_docker_kill_child(int signo) /* {{{ */
++{
++	if (fpm_docker_child_pid > 1) {
++		kill(fpm_docker_child_pid, signo);
++	}
++}
++/* }}} */
++
++void fpm_docker_sig_handler(int signo) /* {{{ */
++{
++	fpm_docker_kill_child(signo);
++}
++/* }}} */
++
++void fpm_docker_setns(struct fpm_worker_pool_s *wp, pid_t namespace_target_pid) /* {{{ */
++{
++	char pathbuf[PATH_MAX];
++	char* ns[] = {"ipc", "uts", "pid", "mnt"};
++	int ns_fd[4];
++	int i;
++
++	for (i = 0; i < 4; i++) {
++		snprintf(pathbuf, sizeof(pathbuf), "/proc/%d/ns/%s", namespace_target_pid, ns[i]);
++		ns_fd[i] = open(pathbuf, O_RDONLY);
++		if (ns_fd[i] < 0) {
++			zlog(ZLOG_SYSERROR, "[pool %s] [docker] child failed to open %s namespace fd", wp->config->name, ns[i]);
++			exit(FPM_EXIT_SOFTWARE);
++		}
++	}
++
++	for (i = 0; i < 4; i++) {
++		if (setns(ns_fd[i], 0)) {
++			zlog(ZLOG_SYSERROR, "[pool %s] [docker] child reassociate to namespace %s failed", wp->config->name, ns[i]);
++			exit(FPM_EXIT_SOFTWARE);
++		}
++		close(ns_fd[i]);
++	}
++}
++/* }}} */
++
++void fpm_docker_add_to_cgroup(struct fpm_worker_pool_s *wp, char * cgroup) /* {{{ */
++{
++	DIR *dir;
++	struct dirent entry;
++	struct dirent *result;
++
++	dir = opendir("/sys/fs/cgroup");
++	if (dir == NULL) {
++		zlog(ZLOG_SYSERROR, "[pool %s] [docker] failed to open /sys/fs/cgroup", wp->config->name);
++		exit(FPM_EXIT_SOFTWARE);
++	}
++
++	char *pid_str;
++	spprintf(&pid_str, 0, "%d\n", getpid());
++
++	while(readdir_r(dir, &entry, &result) == 0 && result != NULL) {
++		if (entry.d_type != DT_DIR) continue;
++		if (strcmp(entry.d_name, ".") == 0 || strcmp(entry.d_name, "..") == 0) continue;
++
++        	char *path;
++	        spprintf(&path, 0, "/sys/fs/cgroup/%s/docker/%s/tasks", entry.d_name, cgroup);
++		if (access(path, F_OK) == 0) {
++			int fd = open(path, O_WRONLY | O_APPEND);
++
++			if (fd < 0 || write(fd, pid_str, strlen(pid_str)) != strlen(pid_str)) {
++				zlog(ZLOG_SYSERROR, "[pool %s] [docker] failed to add task to cgroup %s", wp->config->name, entry.d_name);
++				exit(FPM_EXIT_SOFTWARE);
++			}
++
++			close(fd);
++		}
++
++	        efree(path);
++	}
++
++	efree(pid_str);
++	closedir(dir);
++}
++/* }}} */
++
++
++void fpm_docker_init_child(struct fpm_worker_pool_s *wp) /* {{{ */
++{
++#ifdef HAVE_PRCTL
++	if (prctl(PR_SET_PDEATHSIG, SIGKILL) < 0) {
++		zlog(ZLOG_SYSERROR, "[pool %s] [docker] failed setup parent process death signal for child", wp->config->name);
++		exit(FPM_EXIT_SOFTWARE);
++	}
++#endif
++}
++/* }}} */
++
++void fpm_docker_init_intermediate(struct fpm_worker_pool_s *wp) /* {{{ */
++{
++        struct sigaction act, act_dfl;
++
++        memset(&act, 0, sizeof(act));
++        memset(&act_dfl, 0, sizeof(act_dfl));
++
++        act.sa_handler = &fpm_docker_sig_handler;
++        act.sa_flags |= SA_RESTART;
++
++        act_dfl.sa_handler = SIG_DFL;
++
++        if (0 > sigaction(SIGTERM,  &act_dfl,  0) ||
++            0 > sigaction(SIGINT,   &act_dfl,  0) ||
++            0 > sigaction(SIGUSR1,  &act_dfl,  0) ||
++            0 > sigaction(SIGUSR2,  &act_dfl,  0) ||
++            0 > sigaction(SIGCHLD,  &act_dfl,  0) ||
++            0 > sigaction(SIGQUIT,  &act,      0)) {
++
++                zlog(ZLOG_SYSERROR, "[pool %s] [docker] failed to init intermediate signals: sigaction()", wp->config->name);
++		fpm_docker_kill_child(SIGKILL);
++		exit(FPM_EXIT_SOFTWARE);
++        }
++
++        char *title;
++        spprintf(&title, 0, "pool %s [intemediate]", wp->config->name);
++        fpm_env_setproctitle(title);
++        efree(title);
++}
++/* }}} */
++
++void fpm_docker_wait_child_and_exit() /* {{{ */
++{
++	int status;
++
++	waitpid(fpm_docker_child_pid, &status, 0);
++
++	exit(status);
++}
++/* }}} */
++
++int fpm_docker_pid_and_id(struct fpm_worker_pool_s *wp, pid_t *pid, char* id) /* {{{ */
++{
++	int sock;
++	struct sockaddr_un server;
++	sock = socket(AF_UNIX, SOCK_STREAM, 0);
++	if (sock < 0) {
++		zlog(ZLOG_SYSERROR, "[pool %s] [docker] failed to create AF_UNIX socket", wp->config->name);
++		return 1;
++	}
++	server.sun_family = AF_UNIX;
++	strcpy(server.sun_path, fpm_global_config.docker_socket);
++	if (connect(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {
++		zlog(ZLOG_ERROR, "[pool %s] [docker] failed to connect to docker socket", wp->config->name);
++		close(sock);
++		return 1;
++	}
++
++	char *message;
++        spprintf(&message, 0, "GET /containers/%s/json HTTP/1.0\r\n\r\n", wp->config->docker);
++	if (write(sock, message, strlen(message)) < 0) {
++		zlog(ZLOG_ERROR, "[pool %s] [docker] failed to send message to docker socket", wp->config->name);
++		close(sock);
++		efree(message);
++		return 1;
++	}
++        efree(message);
++
++	char *response = NULL;
++	int response_read_size = 0;
++	int n;
++	do {
++		response = erealloc(response, response_read_size + 4096);
++		n = read(sock, response + response_read_size, 4096);
++		response_read_size += n;
++	} while (n == 4096);
++	response[response_read_size + 1] = 0;
++	close(sock);
++
++	char *tmp;
++	static const char* http_404_search = "HTTP/1.0 404";
++	if (strstr(response, http_404_search) == response) {
++		zlog(ZLOG_ERROR, "[pool %s] [docker] container %s not found", wp->config->name, wp->config->docker);
++		efree(response);
++		return 1;
++	}
++
++	static const char* http_ok_search = "HTTP/1.0 200";
++	if (strstr(response, http_ok_search) != response) {
++		zlog(ZLOG_ERROR, "[pool %s] [docker] non 200 api http answer", wp->config->name);
++		efree(response);
++		return 1;
++	}
++
++	static const char* pid_search = "\"Pid\":";
++	tmp = strstr(response, pid_search);
++	if (tmp == NULL || sscanf(tmp + strlen(pid_search), "%d", pid) != 1) {
++		zlog(ZLOG_ERROR, "[pool %s] [docker] failed to parse State.Pid from answer", wp->config->name);
++		efree(response);
++		return 1;
++	}
++
++	static const char* id_search = "\"Id\":\"";
++	tmp = strstr(response, id_search);
++	if (tmp == NULL || sscanf(tmp + strlen(id_search), "%64s", id) != 1) {
++		zlog(ZLOG_ERROR, "[pool %s] [docker] failed to parse Id from answer", wp->config->name);
++		efree(response);
++		return 1;
++	}
++
++	if (*pid == 0) {
++		zlog(ZLOG_ERROR, "[pool %s] [docker] container %s not running", wp->config->name, wp->config->docker);
++		efree(response);
++		return 1;
++	}
++
++	efree(response);
++
++	return 0;
++}
++/* }}} */
++
++void fpm_docker_enter(struct fpm_worker_pool_s *wp) /* {{{ */
++{
++	pid_t docker_pid;
++	char docker_id[65];
++
++	fpm_docker_init_intermediate(wp);
++
++	if (fpm_docker_pid_and_id(wp, &docker_pid, docker_id) != 0) {
++		srand(clock());
++		usleep(1000000 + rand() % 1000000);
++		exit(FPM_EXIT_SOFTWARE);
++	}
++
++	zlog(ZLOG_DEBUG, "[pool %s] [docker] entering '%s' (id: %s, pid: %d)", wp->config->name, wp->config->docker, docker_id, docker_pid);
++
++	fpm_docker_add_to_cgroup(wp, docker_id);
++	fpm_docker_setns(wp, docker_pid);
++
++	fpm_docker_child_pid = fork();
++
++	switch (fpm_docker_child_pid) {
++
++		case 0 :
++			fpm_docker_init_child(wp);
++			return;
++
++		case -1:
++                	zlog(ZLOG_SYSERROR, "[pool %s] [docker] failed to fork child", wp->config->name);
++			exit(FPM_EXIT_SOFTWARE);
++
++		default:
++			fpm_cleanups_run(FPM_CLEANUP_ALL);
++			fpm_docker_wait_child_and_exit();
++	}
++}
++/* }}} */
+diff -Naur a/fpm/fpm_docker.h b/fpm/fpm_docker.h
+--- a/fpm/fpm_docker.h	1970-01-01 00:00:00.000000000 +0000
++++ b/fpm/fpm_docker.h	2016-02-12 22:17:05.000000000 +0000
+@@ -0,0 +1,9 @@
++
++        /* (c) 2016 Dmitry Stolyarov */
++
++#ifndef FPM_DOCKER_H
++#define FPM_DOCKER_H 1
++
++void fpm_docker_enter(struct fpm_worker_pool_s *wp);
++
++#endif
