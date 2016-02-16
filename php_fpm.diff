@@ -30,15 +30,15 @@ diff -Naur a/fpm/fpm_children.c b/fpm/fpm_children.c
  				fpm_child_init(wp);
 diff -Naur a/fpm/fpm_conf.c b/fpm/fpm_conf.c
 --- a/fpm/fpm_conf.c	2016-02-13 23:38:30.000000000 +0000
-+++ b/fpm/fpm_conf.c	2016-02-13 23:41:16.857143810 +0000
-@@ -103,6 +103,7 @@
++++ b/fpm/fpm_conf.c	2016-02-14 23:20:42.303420608 +0000
+@@ -99,6 +99,7 @@
+ 	{ "syslog.facility",             &fpm_conf_set_syslog_facility, GO(syslog_facility) },
+ #endif
+ 	{ "log_level",                   &fpm_conf_set_log_level,       GO(log_level) },
++	{ "docker_socket",               &fpm_conf_set_string,          GO(docker_socket) },
+ 	{ "emergency_restart_threshold", &fpm_conf_set_integer,         GO(emergency_restart_threshold) },
  	{ "emergency_restart_interval",  &fpm_conf_set_time,            GO(emergency_restart_interval) },
  	{ "process_control_timeout",     &fpm_conf_set_time,            GO(process_control_timeout) },
- 	{ "process.max",                 &fpm_conf_set_integer,         GO(process_max) },
-+	{ "docker_socket",               &fpm_conf_set_string,          GO(docker_socket) },
- 	{ "process.priority",            &fpm_conf_set_integer,         GO(process_priority) },
- 	{ "daemonize",                   &fpm_conf_set_boolean,         GO(daemonize) },
- 	{ "rlimit_files",                &fpm_conf_set_integer,         GO(rlimit_files) },
 @@ -121,6 +122,7 @@
  	{ "prefix",                    &fpm_conf_set_string,      WPO(prefix) },
  	{ "user",                      &fpm_conf_set_string,      WPO(user) },
@@ -68,14 +68,14 @@ diff -Naur a/fpm/fpm_conf.c b/fpm/fpm_conf.c
  		/* listen */
  		if (wp->config->listen_address && *wp->config->listen_address) {
  			wp->listen_address_domain = fpm_sockets_domain_from_address(wp->config->listen_address);
-@@ -1548,6 +1557,7 @@
+@@ -1544,6 +1553,7 @@
+ 	zlog(ZLOG_NOTICE, "\tsyslog.facility = %d",             fpm_global_config.syslog_facility); /* FIXME: convert to string */
+ #endif
+ 	zlog(ZLOG_NOTICE, "\tlog_level = %s",                   zlog_get_level_name(fpm_globals.log_level));
++	zlog(ZLOG_NOTICE, "\tdocker_socket = %s",               STR2STR(fpm_global_config.docker_socket));
+ 	zlog(ZLOG_NOTICE, "\temergency_restart_interval = %ds", fpm_global_config.emergency_restart_interval);
  	zlog(ZLOG_NOTICE, "\temergency_restart_threshold = %d", fpm_global_config.emergency_restart_threshold);
  	zlog(ZLOG_NOTICE, "\tprocess_control_timeout = %ds",    fpm_global_config.process_control_timeout);
- 	zlog(ZLOG_NOTICE, "\tprocess.max = %d",                 fpm_global_config.process_max);
-+	zlog(ZLOG_NOTICE, "\tdocker_socket = %s",               STR2STR(fpm_global_config.docker_socket));
- 	if (fpm_global_config.process_priority == 64) {
- 		zlog(ZLOG_NOTICE, "\tprocess.priority = undefined");
- 	} else {
 @@ -1569,6 +1579,7 @@
  		zlog(ZLOG_NOTICE, "\tprefix = %s",                     STR2STR(wp->config->prefix));
  		zlog(ZLOG_NOTICE, "\tuser = %s",                       STR2STR(wp->config->user));
@@ -86,15 +86,15 @@ diff -Naur a/fpm/fpm_conf.c b/fpm/fpm_conf.c
  		zlog(ZLOG_NOTICE, "\tlisten.owner = %s",               STR2STR(wp->config->listen_owner));
 diff -Naur a/fpm/fpm_conf.h b/fpm/fpm_conf.h
 --- a/fpm/fpm_conf.h	2014-02-05 10:00:36.000000000 +0000
-+++ b/fpm/fpm_conf.h	2016-02-13 23:28:37.072052943 +0000
-@@ -35,6 +35,7 @@
++++ b/fpm/fpm_conf.h	2016-02-14 23:20:17.879385541 +0000
+@@ -31,6 +31,7 @@
+ 	int syslog_facility;
+ #endif
+ 	int log_level;
++	char* docker_socket;
+ 	int emergency_restart_threshold;
  	int emergency_restart_interval;
  	int process_control_timeout;
- 	int process_max;
-+	char* docker_socket;
- 	int process_priority;
- 	int daemonize;
- 	int rlimit_files;
 @@ -56,6 +57,7 @@
  	char *prefix;
  	char *user;
@@ -105,8 +105,8 @@ diff -Naur a/fpm/fpm_conf.h b/fpm/fpm_conf.h
  	char *listen_owner;
 diff -Naur a/fpm/fpm_docker.c b/fpm/fpm_docker.c
 --- a/fpm/fpm_docker.c	1970-01-01 00:00:00.000000000 +0000
-+++ b/fpm/fpm_docker.c	2016-02-13 23:33:18.608457161 +0000
-@@ -0,0 +1,277 @@
++++ b/fpm/fpm_docker.c	2016-02-14 22:24:41.486595295 +0000
+@@ -0,0 +1,283 @@
 +
 +	/* (c) 2016 Dmitry Stolyarov */
 +
@@ -131,6 +131,10 @@ diff -Naur a/fpm/fpm_docker.c b/fpm/fpm_docker.c
 +#include "fpm_worker_pool.h"
 +#include "fpm_env.h"
 +#include "zlog.h"
++
++#ifndef FPM_EXIT_SOFTWARE
++#define FPM_EXIT_SOFTWARE 70
++#endif
 +
 +static pid_t fpm_docker_child_pid = 0;
 +
@@ -353,34 +357,36 @@ diff -Naur a/fpm/fpm_docker.c b/fpm/fpm_docker.c
 +	pid_t docker_pid;
 +	char docker_id[65];
 +
-+	fpm_docker_init_intermediate(wp);
++	if (wp->config->docker != NULL) {
++		fpm_docker_init_intermediate(wp);
 +
-+	if (fpm_docker_pid_and_id(wp, &docker_pid, docker_id) != 0) {
-+		srand(clock());
-+		usleep(1000000 + rand() % 1000000);
-+		exit(FPM_EXIT_SOFTWARE);
-+	}
-+
-+	zlog(ZLOG_DEBUG, "[pool %s] [docker] entering '%s' (id: %s, pid: %d)", wp->config->name, wp->config->docker, docker_id, docker_pid);
-+
-+	fpm_docker_add_to_cgroup(wp, docker_id);
-+	fpm_docker_setns(wp, docker_pid);
-+
-+	fpm_docker_child_pid = fork();
-+
-+	switch (fpm_docker_child_pid) {
-+
-+		case 0 :
-+			fpm_docker_init_child(wp);
-+			return;
-+
-+		case -1:
-+                	zlog(ZLOG_SYSERROR, "[pool %s] [docker] failed to fork child", wp->config->name);
++		if (fpm_docker_pid_and_id(wp, &docker_pid, docker_id) != 0) {
++			srand(clock());
++			usleep(1000000 + rand() % 1000000);
 +			exit(FPM_EXIT_SOFTWARE);
++		}
 +
-+		default:
-+			fpm_cleanups_run(FPM_CLEANUP_ALL);
-+			fpm_docker_wait_child_and_exit();
++		zlog(ZLOG_DEBUG, "[pool %s] [docker] entering '%s' (id: %s, pid: %d)", wp->config->name, wp->config->docker, docker_id, docker_pid);
++
++		fpm_docker_add_to_cgroup(wp, docker_id);
++		fpm_docker_setns(wp, docker_pid);
++
++		fpm_docker_child_pid = fork();
++
++		switch (fpm_docker_child_pid) {
++
++			case 0 :
++				fpm_docker_init_child(wp);
++				return;
++
++			case -1:
++	                	zlog(ZLOG_SYSERROR, "[pool %s] [docker] failed to fork child", wp->config->name);
++				exit(FPM_EXIT_SOFTWARE);
++
++			default:
++				fpm_cleanups_run(FPM_CLEANUP_ALL);
++				fpm_docker_wait_child_and_exit();
++		}
 +	}
 +}
 +/* }}} */
