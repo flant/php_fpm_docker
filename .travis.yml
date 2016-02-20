@@ -5,4 +5,4 @@ matrix:
   include:
     - env: TARGET=ubuntu-14.04
     - env: TARGET=ubuntu-12.04
-script: make "$TARGET"
+script: { make "$TARGET" &>make_"$TARGET".log; tail -n100 ./make_"$TARGET".log; }
