@@ -5,4 +5,4 @@ matrix:
   include:
     - env: TARGET=ubuntu-14.04
     - env: TARGET=ubuntu-12.04
-script: ./debloy.sh "$TARGET"
+script: ./deploy.sh "$TARGET"
