@@ -13,7 +13,7 @@ build-ubuntu-14.04:
 		sed 's/a\//php5.orig\/sapi\/fpm\//g; s/b\//php5\/sapi\/fpm\//g' /sources/php_fpm.diff > debian/patches/php_fpm_docker.patch; \
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
-	cd /build/php5-5.5*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n100
+	cd /build/php5-5.5*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
 	cp /build/php5-fpm* /packages
 
 ubuntu-14.04:
@@ -35,14 +35,14 @@ build-ubuntu-12.04:
 		sed 's/a\//php5.orig\/sapi\/fpm\//g; s/b\//php5\/sapi\/fpm\//g' /sources/php_fpm.diff > debian/patches/php_fpm_docker.patch; \
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
-	cd /build/php5-5.3*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n100
-	cp /build/php5-fpm* /packages
+	cd /build/php5-5.3*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
+	cp /build/php5-fpm* /packages/ubuntu/12.04
 
 ubuntu-12.04:
 	docker run --rm \
 		-v $(TOP):/sources:ro \
 		-v $(TOP)/build/build_dir/ubuntu/12.04/default:/build \
-		-v $(TOP)/packages/ubuntu/12.04:/packages \
+		-v $(TOP)/packages/ubuntu/12.04:/packages/ubuntu/12.04 \
 		-v $(TOP)/build/cache/ubuntu/12.04/apt_cache:/var/cache/apt/ \
 		-v $(TOP)/build/cache/ubuntu/12.04/apt_lists:/var/lib/apt/lists/ \
 		-e DEBIAN_FRONTEND=noninteractive \
@@ -59,7 +59,7 @@ build-ubuntu-14.04-php-5.3:
 		sed 's/a\//php5.orig\/sapi\/fpm\//g; s/b\//php5\/sapi\/fpm\//g' /sources/php_fpm.diff > debian/patches/php_fpm_docker.patch; \
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
-	cd /build/php5-5.3*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n100
+	cd /build/php5-5.3*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
 	cp /build/php5-fpm* /packages
 
 ubuntu-14.04-php-5.3:
@@ -83,7 +83,7 @@ build-ubuntu-14.04-php-5.5-latest:
 		sed 's/a\//php5.orig\/sapi\/fpm\//g; s/b\//php5\/sapi\/fpm\//g' /sources/php_fpm.diff > debian/patches/php_fpm_docker.patch; \
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
-	cd /build/php5-5.5*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n100
+	cd /build/php5-5.5*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
 	cp /build/php5-fpm* /packages
 
 ubuntu-14.04-php-5.5-latest:
@@ -108,7 +108,7 @@ build-ubuntu-14.04-php-5.6:
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series; \
 		quilt push -a
-	cd /build/php5-5.6*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n100
+	cd /build/php5-5.6*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
 	cp /build/php5-fpm* /packages
 
 ubuntu-14.04-php-5.6:

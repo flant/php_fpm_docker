@@ -3,6 +3,11 @@ dist: trusty
 cache: apt
 matrix:
   include:
-    - env: TARGET=ubuntu-14.04
     - env: TARGET=ubuntu-12.04
-script: ./deploy.sh "$TARGET"
+
+before_install:
+  - gem install package_cloud
+
+script: 
+  - ./deploy.sh "$TARGET"
+  - package_cloud push flant/php_fpm_docker/ubuntu/precise /packages/ubuntu/12.04/php-fpm*
