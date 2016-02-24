@@ -14,7 +14,7 @@ build-ubuntu-14.04:
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
 	cd /build/php5-5.5*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5* /packages/ubuntu/14.04
+	cp /build/php5-fpm* /packages/ubuntu/14.04
 
 ubuntu-14.04:
 	docker run --rm \
@@ -36,7 +36,7 @@ build-ubuntu-12.04:
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
 	cd /build/php5-5.3*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5* /packages/ubuntu/12.04
+	cp /build/php5-fpm* /packages/ubuntu/12.04
 	ls -l /packages/ubuntu/12.04
 
 ubuntu-12.04:
@@ -51,7 +51,7 @@ ubuntu-12.04:
 		bash -ec 'trap "exit" SIGINT; bash -ec "rm -f /etc/apt/apt.conf.d/docker-clean; apt-get update; apt-get install -y make; make -C /sources build-ubuntu-12.04" & wait'
 
 build-ubuntu-14.04-php-5.3:
-	apt-get install -y software-properties-common
+	apt-get install -y software-properties-common apt-transport-https
 	add-apt-repository --enable-source ppa:hentenaar/php
 	apt-get update
 	apt-get build-dep -y php5-fpm=5.3
@@ -61,7 +61,7 @@ build-ubuntu-14.04-php-5.3:
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
 	cd /build/php5-5.3*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5* /packages/ubuntu/14.04
+	cp /build/php5-fpm* /packages/ubuntu/14.04
 
 ubuntu-14.04-php-5.3:
 	docker run --rm \
@@ -85,7 +85,7 @@ build-ubuntu-14.04-php-5.5-latest:
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
 	cd /build/php5-5.5*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5* /packages/ubuntu/14.04
+	cp /build/php5-fpm* /packages/ubuntu/14.04
 
 ubuntu-14.04-php-5.5-latest:
 	docker run --rm \
@@ -110,7 +110,7 @@ build-ubuntu-14.04-php-5.6:
 		echo php_fpm_docker.patch >> debian/patches/series; \
 		quilt push -a
 	cd /build/php5-5.6*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5* /packages/ubuntu/14.04
+	cp /build/php5-fpm* /packages/ubuntu/14.04
 
 ubuntu-14.04-php-5.6:
 	docker run --rm \
