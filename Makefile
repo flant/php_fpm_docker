@@ -39,6 +39,8 @@ build-ubuntu-12.04:
 	echo /packages; ls -l /packages/
 	echo /packages/ubuntu/12.04; ls -l /packages/ubuntu/12.04
 	cp /build/php5-fpm* /packages/ubuntu/12.04
+	echo /packages; ls -l /packages/
+	echo /packages/ubuntu/12.04; ls -l /packages/ubuntu/12.04
 
 ubuntu-12.04:
 	docker run --rm \

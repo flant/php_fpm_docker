@@ -10,4 +10,4 @@ before_install:
 
 script: 
   - ./deploy.sh "$TARGET"
-#  - package_cloud push flant/php_fpm_docker/ubuntu/precise /packages/ubuntu/12.04/php-fpm*.deb
+##  - package_cloud push flant/php_fpm_docker/ubuntu/precise /packages/ubuntu/12.04/php-fpm*.deb
