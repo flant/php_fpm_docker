@@ -36,15 +36,15 @@ build-ubuntu-12.04:
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
 	cd /build/php5-5.3*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5-fpm* /packages/ubuntu/12.04
-	echo /packages/ubuntu/12.04; ls -l /packages/ubuntu/12.04
 	echo /packages; ls -l /packages/
+	echo /packages/ubuntu/12.04; ls -l /packages/ubuntu/12.04
+	cp /build/php5-fpm* /packages/ubuntu/12.04
 
 ubuntu-12.04:
 	docker run --rm \
 		-v $(TOP):/sources:ro \
 		-v $(TOP)/build/build_dir/ubuntu/12.04/default:/build \
-		-v $(TOP)/packages/ubuntu/12.04:/packages \
+		-v $(TOP)/packages/ubuntu/12.04:/packages/ubuntu/12.04 \
 		-v $(TOP)/build/cache/ubuntu/12.04/apt_cache:/var/cache/apt/ \
 		-v $(TOP)/build/cache/ubuntu/12.04/apt_lists:/var/lib/apt/lists/ \
 		-e DEBIAN_FRONTEND=noninteractive \
