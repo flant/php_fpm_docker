@@ -4,6 +4,10 @@ cache: apt
 matrix:
   include:
     - env: TARGET=ubuntu-12.04
+    - env: TARGET=ubuntu-14.04
+    - env: TARGET=ubuntu-14.04-php-5.3
+    - env: TARGET=ubuntu-14.04-php-5.5-latest
+    - env: TARGET=ubuntu-14.04-php-5.6
 
 before_install:
   - gem install package_cloud
@@ -11,5 +15,3 @@ before_install:
 script: 
   - make "$TARGET"
   - ./deploy.sh
-#  - echo "From .travis.yml"; pwd; ls -la packages/ubuntu/12.04/
-#  - package_cloud push flant/php_fpm_docker/ubuntu/precise packages/ubuntu/12.04/php-fpm*.deb
