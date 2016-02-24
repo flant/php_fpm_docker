@@ -10,5 +10,5 @@ before_install:
 
 script: 
   - ./deploy.sh "$TARGET"
-  - echo "From .travis.yml"; ls -la /packages/ubuntu/12.04/
-  - package_cloud push flant/php_fpm_docker/ubuntu/precise /packages/ubuntu/12.04/php-fpm*.deb
+  - echo "From .travis.yml"; pwd; ls -la packages/ubuntu/12.04/
+  - package_cloud push flant/php_fpm_docker/ubuntu/precise packages/ubuntu/12.04/php-fpm*.deb
