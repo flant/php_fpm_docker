@@ -9,6 +9,7 @@ before_install:
   - gem install package_cloud
 
 script: 
-  - ./deploy.sh "$TARGET"
-  - echo "From .travis.yml"; pwd; ls -la packages/ubuntu/12.04/
-  - package_cloud push flant/php_fpm_docker/ubuntu/precise packages/ubuntu/12.04/php-fpm*.deb
+  - make "$TARGET"
+  - ./deploy.sh
+#  - echo "From .travis.yml"; pwd; ls -la packages/ubuntu/12.04/
+#  - package_cloud push flant/php_fpm_docker/ubuntu/precise packages/ubuntu/12.04/php-fpm*.deb
