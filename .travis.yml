@@ -4,10 +4,10 @@ cache: apt
 matrix:
   include:
     - env: TARGET=ubuntu-12.04
-#    - env: TARGET=ubuntu-14.04
+    - env: TARGET=ubuntu-14.04
     - env: TARGET=ubuntu-14.04-php-5.3
-#    - env: TARGET=ubuntu-14.04-php-5.5-latest
-#    - env: TARGET=ubuntu-14.04-php-5.6
+    - env: TARGET=ubuntu-14.04-php-5.5-latest
+    - env: TARGET=ubuntu-14.04-php-5.6
 
 before_install:
   - gem install package_cloud

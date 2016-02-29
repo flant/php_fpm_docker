@@ -14,7 +14,7 @@ build-ubuntu-14.04:
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
 	cd /build/php5-5.5*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5-fpm* /packages/ubuntu/14.04
+	cp /build/php5* /packages/ubuntu/14.04
 
 ubuntu-14.04:
 	docker run --rm \
@@ -36,8 +36,7 @@ build-ubuntu-12.04:
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
 	cd /build/php5-5.3*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5-fpm* /packages/ubuntu/12.04
-	ls -l /packages/ubuntu/12.04
+	cp /build/php5* /packages/ubuntu/12.04
 
 ubuntu-12.04:
 	docker run --rm \
@@ -61,13 +60,13 @@ build-ubuntu-14.04-php-5.3:
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
 	cd /build/php5-5.3*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5-fpm* /packages/ubuntu/14.04
+	cp /build/php5* /packages/ubuntu/14.04-5.3
 
 ubuntu-14.04-php-5.3:
 	docker run --rm \
 		-v $(TOP):/sources:ro \
 		-v $(TOP)/build/build_dir/ubuntu/14.04/5.3:/build \
-		-v $(TOP)/packages/ubuntu/14.04:/packages/ubuntu/14.04 \
+		-v $(TOP)/packages/ubuntu/14.04-5.3:/packages/ubuntu/14.04-5.3 \
 		-v $(TOP)/build/cache/ubuntu/14.04/apt_cache:/var/cache/apt/ \
 		-v $(TOP)/build/cache/ubuntu/14.04/apt_lists:/var/lib/apt/lists/ \
 		-e DEBIAN_FRONTEND=noninteractive \
@@ -75,7 +74,7 @@ ubuntu-14.04-php-5.3:
 		bash -ec 'trap "exit" SIGINT; bash -ec "rm -f /etc/apt/apt.conf.d/docker-clean; apt-get update; apt-get install -y make; make -C /sources build-ubuntu-14.04-php-5.3" & wait'
 
 build-ubuntu-14.04-php-5.5-latest:
-	apt-get install -y software-properties-common language-pack-en-base
+	apt-get install -y software-properties-common language-pack-en-base apt-transport-https
 	LC_ALL=en_US.UTF-8 add-apt-repository --enable-source ppa:ondrej/php5
 	apt-get update
 	apt-get build-dep -y php5-fpm
@@ -85,13 +84,13 @@ build-ubuntu-14.04-php-5.5-latest:
 		sed -i '/php_fpm_docker\.patch/d' debian/patches/series; \
 		echo php_fpm_docker.patch >> debian/patches/series
 	cd /build/php5-5.5*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5-fpm* /packages/ubuntu/14.04
+	cp /build/php5* /packages/ubuntu/14.04-5.5-latest
 
 ubuntu-14.04-php-5.5-latest:
 	docker run --rm \
 		-v $(TOP):/sources:ro \
 		-v $(TOP)/build/build_dir/ubuntu/14.04/5.5-latest:/build \
-		-v $(TOP)/packages/ubuntu/14.04:/packages/ubuntu/14.04 \
+		-v $(TOP)/packages/ubuntu/14.04-5.5-latest:/packages/ubuntu/14.04-5.5-latest \
 		-v $(TOP)/build/cache/ubuntu/14.04/apt_cache:/var/cache/apt/ \
 		-v $(TOP)/build/cache/ubuntu/14.04/apt_lists:/var/lib/apt/lists/ \
 		-e DEBIAN_FRONTEND=noninteractive \
@@ -99,7 +98,7 @@ ubuntu-14.04-php-5.5-latest:
 		bash -ec 'trap "exit" SIGINT; bash -ec "rm -f /etc/apt/apt.conf.d/docker-clean; apt-get update; apt-get install -y make; make -C /sources build-ubuntu-14.04-php-5.5-latest" & wait'
 
 build-ubuntu-14.04-php-5.6:
-	apt-get install -y software-properties-common language-pack-en-base quilt
+	apt-get install -y software-properties-common language-pack-en-base apt-transport-https quilt
 	LC_ALL=en_US.UTF-8 add-apt-repository --enable-source ppa:ondrej/php5-5.6
 	apt-get update
 	apt-get build-dep -y php5-fpm
@@ -110,13 +109,13 @@ build-ubuntu-14.04-php-5.6:
 		echo php_fpm_docker.patch >> debian/patches/series; \
 		quilt push -a
 	cd /build/php5-5.6*; DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -j$(JOBS) | tail -n200
-	cp /build/php5-fpm* /packages/ubuntu/14.04
+	cp /build/php5* /packages/ubuntu/14.04-5.6
 
 ubuntu-14.04-php-5.6:
 	docker run --rm \
 		-v $(TOP):/sources:ro \
 		-v $(TOP)/build/build_dir/ubuntu/14.04/5.6:/build \
-		-v $(TOP)/packages/ubuntu/14.04:/packages/ubuntu/14.04 \
+		-v $(TOP)/packages/ubuntu/14.04-5.6:/packages/ubuntu/14.04-5.6 \
 		-v $(TOP)/build/cache/ubuntu/14.04/apt_cache:/var/cache/apt/ \
 		-v $(TOP)/build/cache/ubuntu/14.04/apt_lists:/var/lib/apt/lists/ \
 		-e DEBIAN_FRONTEND=noninteracive \
