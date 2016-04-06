@@ -1,0 +1,27 @@
+build_type: patch
+package_cloud: distorhead/main
+
+patch: php_fpm.diff
+patch_version: 1
+
+package_name: php5-fpm
+
+ubuntu/14.04/php-5.3:
+  package_version: 5.3
+  prepare:
+  - add-apt-repository --enable-source ppa:hentenaar/php
+
+ubuntu/14.04/php-5.5-latest:
+  prepare:
+  - LC_ALL=en_US.UTF-8 add-apt-repository --enable-source ppa:ondrej/php5
+
+ubuntu/14.04/php-5.6:
+  prepare:
+  - LC_ALL=en_US.UTF-8 add-apt-repository --enable-source ppa:ondrej/php5-5.6
+
+target:
+- ubuntu/12.04/php5-fpm
+- ubuntu/14.04/php-5.5
+- ubuntu/14.04/php-5.3
+- ubuntu/14.04/php-5.5-latest
+- ubuntu/14.04/php-5.6
