@@ -1,6 +1,6 @@
-diff -Naur a/config.m4 b/config.m4
---- a/config.m4	2016-02-13 23:38:30.000000000 +0000
-+++ b/config.m4	2016-02-12 22:54:47.000000000 +0000
+diff -Naur php5.orig/sapi/fpm/config.m4 php5/sapi/fpm/config.m4
+--- php5.orig/sapi/fpm/config.m4	2016-02-13 23:38:30.000000000 +0000
++++ php5/sapi/fpm/config.m4	2016-02-12 22:54:47.000000000 +0000
 @@ -647,6 +647,7 @@
      fpm/fpm_stdio.c \
      fpm/fpm_unix.c \
@@ -9,9 +9,9 @@ diff -Naur a/config.m4 b/config.m4
      fpm/zlog.c \
  		fpm/events/select.c \
  		fpm/events/poll.c \
-diff -Naur a/fpm/fpm_children.c b/fpm/fpm_children.c
---- a/fpm/fpm_children.c	2014-02-05 10:00:36.000000000 +0000
-+++ b/fpm/fpm_children.c	2016-02-13 23:40:24.809069081 +0000
+diff -Naur php5.orig/sapi/fpm/fpm/fpm_children.c php5/sapi/fpm/fpm/fpm_children.c
+--- php5.orig/sapi/fpm/fpm/fpm_children.c	2014-02-05 10:00:36.000000000 +0000
++++ php5/sapi/fpm/fpm/fpm_children.c	2016-02-13 23:40:24.809069081 +0000
 @@ -28,6 +28,7 @@
  #include "fpm_scoreboard.h"
  #include "fpm_status.h"
@@ -28,9 +28,9 @@ diff -Naur a/fpm/fpm_children.c b/fpm/fpm_children.c
  				fpm_child_resources_use(child);
  				fpm_globals.is_child = 1;
  				fpm_child_init(wp);
-diff -Naur a/fpm/fpm_conf.c b/fpm/fpm_conf.c
---- a/fpm/fpm_conf.c	2016-02-13 23:38:30.000000000 +0000
-+++ b/fpm/fpm_conf.c	2016-02-14 23:20:42.303420608 +0000
+diff -Naur php5.orig/sapi/fpm/fpm/fpm_conf.c php5/sapi/fpm/fpm/fpm_conf.c
+--- php5.orig/sapi/fpm/fpm/fpm_conf.c	2016-02-13 23:38:30.000000000 +0000
++++ php5/sapi/fpm/fpm/fpm_conf.c	2016-02-14 23:20:42.303420608 +0000
 @@ -99,6 +99,7 @@
  	{ "syslog.facility",             &fpm_conf_set_syslog_facility, GO(syslog_facility) },
  #endif
@@ -84,9 +84,9 @@ diff -Naur a/fpm/fpm_conf.c b/fpm/fpm_conf.c
  		zlog(ZLOG_NOTICE, "\tlisten = %s",                     STR2STR(wp->config->listen_address));
  		zlog(ZLOG_NOTICE, "\tlisten.backlog = %d",             wp->config->listen_backlog);
  		zlog(ZLOG_NOTICE, "\tlisten.owner = %s",               STR2STR(wp->config->listen_owner));
-diff -Naur a/fpm/fpm_conf.h b/fpm/fpm_conf.h
---- a/fpm/fpm_conf.h	2014-02-05 10:00:36.000000000 +0000
-+++ b/fpm/fpm_conf.h	2016-02-14 23:20:17.879385541 +0000
+diff -Naur php5.orig/sapi/fpm/fpm/fpm_conf.h php5/sapi/fpm/fpm/fpm_conf.h
+--- php5.orig/sapi/fpm/fpm/fpm_conf.h	2014-02-05 10:00:36.000000000 +0000
++++ php5/sapi/fpm/fpm/fpm_conf.h	2016-02-14 23:20:17.879385541 +0000
 @@ -31,6 +31,7 @@
  	int syslog_facility;
  #endif
@@ -103,9 +103,9 @@ diff -Naur a/fpm/fpm_conf.h b/fpm/fpm_conf.h
  	char *listen_address;
  	int listen_backlog;
  	char *listen_owner;
-diff -Naur a/fpm/fpm_docker.c b/fpm/fpm_docker.c
---- a/fpm/fpm_docker.c	1970-01-01 00:00:00.000000000 +0000
-+++ b/fpm/fpm_docker.c	2016-02-14 22:24:41.486595295 +0000
+diff -Naur php5.orig/sapi/fpm/fpm/fpm_docker.c php5/sapi/fpm/fpm/fpm_docker.c
+--- php5.orig/sapi/fpm/fpm/fpm_docker.c	1970-01-01 00:00:00.000000000 +0000
++++ php5/sapi/fpm/fpm/fpm_docker.c	2016-02-14 22:24:41.486595295 +0000
 @@ -0,0 +1,283 @@
 +
 +	/* (c) 2016 Dmitry Stolyarov */
@@ -390,9 +390,9 @@ diff -Naur a/fpm/fpm_docker.c b/fpm/fpm_docker.c
 +	}
 +}
 +/* }}} */
-diff -Naur a/fpm/fpm_docker.h b/fpm/fpm_docker.h
---- a/fpm/fpm_docker.h	1970-01-01 00:00:00.000000000 +0000
-+++ b/fpm/fpm_docker.h	2016-02-12 22:17:05.000000000 +0000
+diff -Naur php5.orig/sapi/fpm/fpm/fpm_docker.h php5/sapi/fpm/fpm/fpm_docker.h
+--- php5.orig/sapi/fpm/fpm/fpm_docker.h	1970-01-01 00:00:00.000000000 +0000
++++ php5/sapi/fpm/fpm/fpm_docker.h	2016-02-12 22:17:05.000000000 +0000
 @@ -0,0 +1,9 @@
 +
 +        /* (c) 2016 Dmitry Stolyarov */
