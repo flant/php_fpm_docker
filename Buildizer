@@ -1,5 +1,6 @@
 build_type: patch
 package_cloud: distorhead/main
+#package_cloud: flant/php_fpm_docker
 
 patch: php_fpm.diff
 patch_version: 1
