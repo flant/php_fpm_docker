@@ -33,4 +33,5 @@ env:
 - BUILDIZER_TARGET=ubuntu/14.04/php-5.5
 - BUILDIZER_TARGET=ubuntu/14.04/php-5.3
 - BUILDIZER_TARGET=ubuntu/14.04/php-5.5-latest
+- BUILDIZER_TARGET=ubuntu/14.04/php-5.6
 after_success: buildizer deploy
