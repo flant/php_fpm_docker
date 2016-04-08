@@ -2,7 +2,7 @@
 sudo: required
 dist: trusty
 cache: apt
-script: travis_wait buildizer build
+script: buildizer build
 language: ruby
 rvm: 2.2.1
 install:
